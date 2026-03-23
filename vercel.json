@@ -1,7 +1,10 @@
 {
-  "version": 2,
   "functions": {
-    "api/download.py": { "runtime": "python@3.12", "maxDuration": 30 },
-    "api/info.py": { "runtime": "python@3.12", "maxDuration": 15 }
-  }
+    "api/download.py": { "maxDuration": 30 },
+    "api/info.py": { "maxDuration": 15 }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/public/index.html" }
+  ]
 }
