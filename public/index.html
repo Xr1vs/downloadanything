@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ytdl — by xr1vs</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--s1:#101010;--s2:#181818;--s3:#202020;
+  --b1:#1e1e1e;--b2:#2a2a2a;--b3:#383838;
+  --t1:#f2f2f2;--t2:#888;--t3:#444;
+  --ok:#22c55e;--err:#ef4444;--warn:#f59e0b;--blue:#3b82f6;
+}
+body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── TOPBAR ── */
+.topbar{height:50px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,8,8,.95);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
+.tb-left{display:flex;align-items:center;gap:10px}
+.tb-dot{width:28px;height:28px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.tb-name{font-size:15px;font-weight:800;letter-spacing:-.5px}
+.tb-name span{color:var(--t3)}
+.tb-by{font-size:9px;color:var(--t3);letter-spacing:1px;text-transform:uppercase}
+.tb-right{font-family:'Geist Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.tb-right::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+
+/* ── MAIN ── */
+.wrap{max-width:680px;margin:0 auto;padding:40px 22px 80px}
+
+/* ── HERO ── */
+.hero{text-align:center;margin-bottom:40px}
+.hero h1{font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:8px}
+.hero h1 span{color:var(--t3)}
+.hero p{font-size:13px;color:var(--t2);line-height:1.6}
+
+/* ── SUPPORTED SITES ── */
+.sites{display:flex;gap:6px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.site{font-family:'Geist Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;background:var(--s2);border:1px solid var(--b1);border-radius:5px;padding:3px 8px;color:var(--t3)}
+
+/* ── URL INPUT ── */
+.input-wrap{position:relative;margin-bottom:10px}
+.url-inp{width:100%;background:var(--s1);border:1px solid var(--b2);border-radius:12px;padding:16px 130px 16px 18px;font-family:'Geist',sans-serif;font-size:14px;color:var(--t1);outline:none;transition:border-color .15s;caret-color:#fff}
+.url-inp:focus{border-color:var(--b3)}
+.url-inp::placeholder{color:var(--t3)}
+.url-inp.err{border-color:var(--err)}
+.paste-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--s3);border:1px solid var(--b2);border-radius:8px;padding:7px 14px;font-family:'Geist',sans-serif;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .12s}
+.paste-btn:hover{border-color:var(--b3);color:var(--t1)}
+
+/* ── FORMAT OPTIONS ── */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+@media(max-width:500px){.opts{grid-template-columns:1fr}}
+.opt-group{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:13px}
+.opt-head{font-family:'Geist Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg-btn{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 11px;font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .1s}
+.seg-btn:hover{border-color:var(--b2);color:var(--t1)}
+.seg-btn.on{background:#fff;border-color:#fff;color:#000;font-weight:700}
+.seg-btn small{display:block;font-size:7px;opacity:.6;margin-top:1px}
+
+/* ── DOWNLOAD BUTTON ── */
+.dl-btn{width:100%;background:#fff;border:none;border-radius:12px;padding:15px;font-family:'Geist',sans-serif;font-size:14px;font-weight:700;color:#000;cursor:pointer;transition:opacity .15s,transform .1s;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:9px}
+.dl-btn:hover{opacity:.88}
+.dl-btn:active{transform:scale(.99)}
+.dl-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.dl-btn .ico{font-size:16px}
+
+/* ── VIDEO PREVIEW CARD ── */
+.preview-card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:14px;display:none;margin-bottom:10px;animation:fin .2s ease}
+@keyframes fin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.preview-inner{display:flex;gap:13px;align-items:flex-start}
+.preview-thumb{width:100px;min-width:100px;height:56px;border-radius:7px;background:var(--s3);overflow:hidden;flex-shrink:0}
+.preview-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.preview-info{flex:1;min-width:0}
+.preview-title{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.preview-author{font-size:10px;color:var(--t2);margin-bottom:6px}
+.preview-tags{display:flex;gap:5px;flex-wrap:wrap}
+.preview-tag{font-family:'Geist Mono',monospace;font-size:8px;background:var(--s3);border:1px solid var(--b1);border-radius:4px;padding:2px 6px;color:var(--t3)}
+
+/* ── PROGRESS ── */
+.prog-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;display:none;margin-bottom:10px;animation:fin .2s ease}
+.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-lbl{font-size:11px;color:var(--t2)}
+.prog-pct{font-family:'Geist Mono',monospace;font-size:10px;color:#fff;font-weight:600}
+.prog-bar{height:2px;background:var(--b1);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;width:0%;background:#fff;border-radius:2px;transition:width .4s ease}
+
+/* ── QUEUE ── */
+.queue{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.qitem{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;animation:fin .15s ease}
+.qitem-thumb{width:40px;height:40px;border-radius:6px;background:var(--s3);overflow:hidden;flex-shrink:0}
+.qitem-thumb img{width:100%;height:100%;object-fit:cover}
+.qitem-info{flex:1;min-width:0}
+.qitem-title{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.qitem-meta{font-family:'Geist Mono',monospace;font-size:9px;color:var(--t3);display:flex;gap:8px}
+.qitem-bar{width:50px;height:2px;background:var(--b1);border-radius:2px;overflow:hidden;flex-shrink:0}
+.qitem-fill{height:100%;width:0%;background:#fff;border-radius:2px;transition:width .3s}
+.qbadge{font-family:'Geist Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 6px;border-radius:4px;flex-shrink:0}
+.qbadge.wait{background:var(--s3);color:var(--t3);border:1px solid var(--b1)}
+.qbadge.proc{background:rgba(255,255,255,.06);color:var(--t2);border:1px solid var(--b2);animation:blink 1s ease-in-out infinite}
+.qbadge.done{background:rgba(34,197,94,.08);color:var(--ok);border:1px solid rgba(34,197,94,.2)}
+.qbadge.err{background:rgba(239,68,68,.08);color:var(--err);border:1px solid rgba(239,68,68,.2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.qitem-dl{width:26px;height:26px;border-radius:6px;background:transparent;border:1px solid var(--b1);color:var(--t3);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+.qitem-dl:hover:not(:disabled){border-color:var(--ok);color:var(--ok)}
+.qitem-dl:disabled{opacity:.25;cursor:not-allowed}
+.qitem-rm{width:26px;height:26px;border-radius:6px;background:transparent;border:1px solid transparent;color:var(--t3);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+.qitem-rm:hover{border-color:rgba(239,68,68,.3);color:var(--err)}
+
+/* ── PLAYLIST MODE ── */
+.playlist-banner{display:none;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:11px 14px;font-size:11px;color:#93c5fd;margin-bottom:10px;line-height:1.6}
+
+/* ── SECTION LABEL ── */
+.slbl{font-family:'Geist Mono',monospace;font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.slbl::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+/* ── HISTORY ── */
+.hist-section{margin-top:32px}
+.hist-item{display:flex;align-items:center;gap:11px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:11px 13px;margin-bottom:6px;transition:border-color .12s}
+.hist-item:hover{border-color:var(--b2)}
+.hist-thumb{width:40px;height:40px;border-radius:6px;background:var(--s3);overflow:hidden;flex-shrink:0}
+.hist-thumb img{width:100%;height:100%;object-fit:cover}
+.hist-info{flex:1;min-width:0}
+.hist-title{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.hist-meta{font-family:'Geist Mono',monospace;font-size:9px;color:var(--t3);display:flex;gap:8px}
+.hist-dl{width:26px;height:26px;border-radius:6px;background:transparent;border:1px solid var(--b1);color:var(--t3);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+.hist-dl:hover{border-color:var(--ok);color:var(--ok)}
+.empty{text-align:center;padding:32px;color:var(--t3)}
+.empty-ico{font-size:24px;margin-bottom:8px}
+.empty-lbl{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border-radius:9px;padding:10px 15px;font-size:11px;font-weight:500;z-index:9999;transform:translateY(60px);opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:7px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+#toast.ok{border:1px solid rgba(34,197,94,.25);color:var(--ok)}
+#toast.err{border:1px solid rgba(239,68,68,.25);color:var(--err)}
+#toast.inf{border:1px solid var(--b2);color:var(--t2)}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* ── SETUP WARNING ── */
+.setup-warn{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:none}
+.setup-warn h3{font-size:13px;font-weight:700;color:var(--warn);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.setup-warn p{font-size:11px;color:rgba(245,158,11,.7);line-height:1.7}
+.setup-warn code{background:rgba(245,158,11,.1);border-radius:4px;padding:1px 5px;font-family:'Geist Mono',monospace;font-size:10px}
+.setup-warn a{color:var(--warn);text-decoration:underline}
+
+@media(max-width:480px){.hero h1{font-size:32px}.topbar{padding:0 14px}.wrap{padding:28px 14px 60px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-dot">▼</div>
+    <div>
+      <div class="tb-name">yt<span>dl</span></div>
+      <div class="tb-by">by xr1vs</div>
+    </div>
+  </div>
+  <div class="tb-right">online</div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>download<br><span>anything.</span></h1>
+    <p>youtube, tiktok, instagram, twitter/x, soundcloud & more.<br>mp3, mp4, any quality. no ads, no tracking.</p>
+    <div class="sites">
+      <span class="site">youtube</span><span class="site">tiktok</span><span class="site">instagram</span>
+      <span class="site">twitter/x</span><span class="site">soundcloud</span><span class="site">reddit</span>
+      <span class="site">twitch</span><span class="site">pinterest</span>
+    </div>
+  </div>
+
+  <!-- URL Input -->
+  <div class="input-wrap">
+    <input class="url-inp" id="url-inp" type="text" placeholder="paste a youtube, tiktok, instagram, twitter url..." autocomplete="off" spellcheck="false">
+    <button class="paste-btn" onclick="pasteUrl()">paste</button>
+  </div>
+
+  <!-- Video preview -->
+  <div class="preview-card" id="preview-card">
+    <div class="preview-inner">
+      <div class="preview-thumb"><img id="preview-thumb" src="" alt=""></div>
+      <div class="preview-info">
+        <div class="preview-title" id="preview-title">—</div>
+        <div class="preview-author" id="preview-author">—</div>
+        <div class="preview-tags">
+          <span class="preview-tag" id="ptag-site">youtube</span>
+          <span class="preview-tag" id="ptag-type">video</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Playlist notice -->
+  <div class="playlist-banner" id="playlist-banner">
+    📋 playlist detected — add individual video URLs to download them one at a time, or use the URL directly to download the first video.
+  </div>
+
+  <!-- Format Options -->
+  <div class="opts">
+    <div class="opt-group">
+      <div class="opt-head">format</div>
+      <div class="seg">
+        <button class="seg-btn on" data-mode="audio" onclick="setMode(this)">mp3<small>audio</small></button>
+        <button class="seg-btn" data-mode="video" onclick="setMode(this)">mp4<small>video</small></button>
+        <button class="seg-btn" data-mode="mute" onclick="setMode(this)">mp4<small>no audio</small></button>
+      </div>
+    </div>
+    <div class="opt-group" id="quality-group">
+      <div class="opt-head" id="quality-head">audio quality</div>
+      <div class="seg" id="audio-quality">
+        <button class="seg-btn on" data-aq="mp3" onclick="setAQ(this)">mp3</button>
+        <button class="seg-btn" data-aq="ogg" onclick="setAQ(this)">ogg</button>
+        <button class="seg-btn" data-aq="wav" onclick="setAQ(this)">wav</button>
+        <button class="seg-btn" data-aq="opus" onclick="setAQ(this)">opus</button>
+        <button class="seg-btn" data-aq="best" onclick="setAQ(this)">best</button>
+      </div>
+      <div class="seg" id="video-quality" style="display:none">
+        <button class="seg-btn" data-vq="144" onclick="setVQ(this)">144p</button>
+        <button class="seg-btn" data-vq="360" onclick="setVQ(this)">360p</button>
+        <button class="seg-btn" data-vq="720" onclick="setVQ(this)">720p</button>
+        <button class="seg-btn on" data-vq="1080" onclick="setVQ(this)">1080p</button>
+        <button class="seg-btn" data-vq="2160" onclick="setVQ(this)">4K</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download button -->
+  <button class="dl-btn" id="dl-btn" onclick="startDownload()">
+    <span class="ico">↓</span> download
+  </button>
+
+  <!-- Progress -->
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-top">
+      <span class="prog-lbl" id="prog-lbl">fetching...</span>
+      <span class="prog-pct" id="prog-pct">—</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+  </div>
+
+  <!-- Download queue -->
+  <div id="queue-list"></div>
+
+  <!-- History -->
+  <div class="hist-section" id="hist-section" style="display:none">
+    <div class="slbl">recent downloads</div>
+    <div id="hist-list"></div>
+  </div>
+
+</div>
+
+<div id="toast"><span id="toast-msg"></span></div>
+
+<script>
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+let mode = 'audio';     // audio | video | mute
+let audioFmt = 'mp3';
+let videoQuality = '1080';
+let queue = [];
+let currentInfo = null;
+let lookupTimer = null;
+
+/* ════════════════════════════════════════
+   URL INPUT & LOOKUP
+════════════════════════════════════════ */
+const urlInp = document.getElementById('url-inp');
+
+urlInp.addEventListener('input', () => {
+  clearTimeout(lookupTimer);
+  const val = urlInp.value.trim();
+  if (!val) { hidePreview(); return; }
+  lookupTimer = setTimeout(() => fetchInfo(val), 600);
+});
+
+urlInp.addEventListener('paste', e => {
+  setTimeout(() => fetchInfo(urlInp.value.trim()), 100);
+});
+
+async function pasteUrl() {
+  try {
+    const text = await navigator.clipboard.readText();
+    urlInp.value = text;
+    fetchInfo(text.trim());
+  } catch { toast('could not read clipboard', 'err'); }
+}
+
+async function fetchInfo(url) {
+  if (!url || !url.startsWith('http')) { hidePreview(); return; }
+  try {
+    const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+    const data = await res.json();
+    if (data.error) { hidePreview(); return; }
+
+    currentInfo = data;
+
+    if (data.type === 'playlist') {
+      hidePreview();
+      document.getElementById('playlist-banner').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('playlist-banner').style.display = 'none';
+    document.getElementById('preview-thumb').src = data.thumbnail || '';
+    document.getElementById('preview-title').textContent = data.title || 'unknown title';
+    document.getElementById('preview-author').textContent = data.author || '';
+    document.getElementById('ptag-site').textContent = getSite(url);
+    document.getElementById('ptag-type').textContent = mode === 'audio' ? 'audio' : 'video';
+    document.getElementById('preview-card').style.display = 'block';
+  } catch { hidePreview(); }
+}
+
+function hidePreview() {
+  currentInfo = null;
+  document.getElementById('preview-card').style.display = 'none';
+  document.getElementById('playlist-banner').style.display = 'none';
+}
+
+function getSite(url) {
+  if (url.includes('youtu')) return 'youtube';
+  if (url.includes('tiktok')) return 'tiktok';
+  if (url.includes('instagram')) return 'instagram';
+  if (url.includes('twitter') || url.includes('x.com')) return 'twitter/x';
+  if (url.includes('soundcloud')) return 'soundcloud';
+  if (url.includes('reddit')) return 'reddit';
+  if (url.includes('twitch')) return 'twitch';
+  return 'unknown';
+}
+
+/* ════════════════════════════════════════
+   FORMAT SETTINGS
+════════════════════════════════════════ */
+function setMode(btn) {
+  document.querySelectorAll('.seg-btn[data-mode]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  mode = btn.dataset.mode;
+  const aq = document.getElementById('audio-quality');
+  const vq = document.getElementById('video-quality');
+  const head = document.getElementById('quality-head');
+  if (mode === 'audio') {
+    aq.style.display = 'flex'; vq.style.display = 'none';
+    head.textContent = 'audio format';
+  } else {
+    aq.style.display = 'none'; vq.style.display = 'flex';
+    head.textContent = mode === 'mute' ? 'video quality (no audio)' : 'video quality';
+  }
+  if (currentInfo) document.getElementById('ptag-type').textContent = mode === 'audio' ? 'audio' : 'video';
+}
+function setAQ(btn) {
+  document.querySelectorAll('.seg-btn[data-aq]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); audioFmt = btn.dataset.aq;
+}
+function setVQ(btn) {
+  document.querySelectorAll('.seg-btn[data-vq]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); videoQuality = btn.dataset.vq;
+}
+
+/* ════════════════════════════════════════
+   DOWNLOAD
+════════════════════════════════════════ */
+async function startDownload() {
+  const url = urlInp.value.trim();
+  if (!url) { toast('paste a url first', 'err'); urlInp.classList.add('err'); setTimeout(() => urlInp.classList.remove('err'), 600); return; }
+
+  const item = {
+    id:       Date.now(),
+    url,
+    title:    currentInfo?.title || url,
+    author:   currentInfo?.author || '',
+    thumb:    currentInfo?.thumbnail || '',
+    site:     getSite(url),
+    mode,
+    fmt:      mode === 'audio' ? audioFmt : videoQuality + 'p',
+    status:   'proc',
+    dlUrl:    null,
+    filename: null,
+  };
+
+  queue.unshift(item);
+  renderQueue();
+
+  document.getElementById('prog-wrap').style.display = 'block';
+  setProg(10, `fetching ${item.title.slice(0,40)}...`);
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url,
+        downloadMode:   mode === 'audio' ? 'audio' : mode === 'mute' ? 'mute' : 'auto',
+        audioFormat:    audioFmt === 'best' ? 'best' : audioFmt,
+        videoQuality,
+        filenameStyle:  'pretty',
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.error || data.status === 'error') {
+      const msg = data.error?.code || data.error || 'download failed';
+      // Check if cobalt not configured
+      throw new Error(msg);
+    }
+
+    setProg(60, 'preparing download...');
+
+    if (data.status === 'tunnel' || data.status === 'redirect') {
+      item.dlUrl    = data.url;
+      item.filename = data.filename || buildFilename(item);
+      item.status   = 'done';
+      setProg(100, 'ready!');
+
+      // Trigger download
+      triggerDownload(data.url, item.filename);
+
+      // Save to history
+      saveHistory(item);
+      toast(`✓ ${item.title.slice(0, 35)}`, 'ok');
+    } else {
+      throw new Error('unexpected cobalt response: ' + data.status);
+    }
+  } catch (e) {
+    item.status = 'err';
+    item.errMsg = e.message;
+    toast(e.message.slice(0, 60), 'err');
+    setProg(0, 'error');
+  }
+
+  renderQueue();
+  setTimeout(() => { document.getElementById('prog-wrap').style.display = 'none'; setProg(0, ''); }, 3000);
+}
+
+function triggerDownload(url, filename) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'download';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function buildFilename(item) {
+  const ext = item.mode === 'audio' ? item.fmt : 'mp4';
+  const safe = (item.title || 'download').replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').slice(0, 60);
+  return `${safe}.${ext}`;
+}
+
+/* ════════════════════════════════════════
+   QUEUE
+════════════════════════════════════════ */
+function renderQueue() {
+  const l = document.getElementById('queue-list');
+  if (!queue.length) { l.innerHTML = ''; return; }
+  l.innerHTML = queue.map((item, i) => `
+    <div class="qitem" id="qi${item.id}">
+      <div class="qitem-thumb">${item.thumb ? `<img src="${item.thumb}" alt="">` : ''}</div>
+      <div class="qitem-info">
+        <div class="qitem-title">${esc(item.title)}</div>
+        <div class="qitem-meta"><span>${item.site}</span><span>${item.fmt}</span>${item.errMsg ? `<span style="color:var(--err)">${esc(item.errMsg.slice(0,40))}</span>` : ''}</div>
+      </div>
+      <div class="qitem-bar"><div class="qitem-fill" style="width:${item.status==='done'?'100':item.status==='proc'?'60':'0'}%"></div></div>
+      <div class="qbadge ${item.status === 'done' ? 'done' : item.status === 'err' ? 'err' : item.status === 'proc' ? 'proc' : 'wait'}">${item.status}</div>
+      <button class="qitem-dl" ${item.dlUrl ? '' : 'disabled'} onclick="triggerDownload('${item.dlUrl}','${esc(item.filename||'')}')">↓</button>
+      <button class="qitem-rm" onclick="removeQueue(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeQueue(i) { queue.splice(i, 1); renderQueue(); }
+
+/* ════════════════════════════════════════
+   PROGRESS
+════════════════════════════════════════ */
+function setProg(pct, lbl) {
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent  = pct ? pct + '%' : '—';
+  document.getElementById('prog-lbl').textContent  = lbl;
+}
+
+/* ════════════════════════════════════════
+   HISTORY
+════════════════════════════════════════ */
+function getHistory() { try { return JSON.parse(localStorage.getItem('ytdl_h') || '[]'); } catch { return []; } }
+function saveHistory(item) {
+  const h = getHistory();
+  h.unshift({ title: item.title, thumb: item.thumb, site: item.site, fmt: item.fmt, url: item.dlUrl, filename: item.filename, ts: new Date().toISOString() });
+  localStorage.setItem('ytdl_h', JSON.stringify(h.slice(0, 50)));
+  renderHistory();
+}
+function renderHistory() {
+  const h = getHistory();
+  const sec = document.getElementById('hist-section');
+  const l = document.getElementById('hist-list');
+  if (!h.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  l.innerHTML = h.map(e => `
+    <div class="hist-item">
+      <div class="hist-thumb">${e.thumb ? `<img src="${e.thumb}" alt="">` : ''}</div>
+      <div class="hist-info">
+        <div class="hist-title">${esc(e.title || 'unknown')}</div>
+        <div class="hist-meta"><span>${e.site}</span><span>${e.fmt}</span><span>${fmtDate(e.ts)}</span></div>
+      </div>
+      ${e.url ? `<button class="hist-dl" onclick="triggerDownload('${e.url}','${esc(e.filename||'')}')">↓</button>` : '<button class="hist-dl" disabled style="opacity:.3">↓</button>'}
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════ */
+function esc(s) { return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+
+function toast(msg, type = 'inf') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = `${type} show`;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Init
+renderHistory();
+</script>
+</body>
+</html>
